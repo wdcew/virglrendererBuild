@@ -30,7 +30,7 @@ jobs:
              
           # 4. 安装 pip 并通过 pip 安装 meson 和 ninja (Slackware 自带的可能太旧)
           python3 -m ensurepip
-          pip3 install meson ninja
+          pip3 install meson==25.2.3 ninja
 
       - name: Clone Virglrenderer
         run: |

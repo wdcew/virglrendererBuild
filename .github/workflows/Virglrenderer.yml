@@ -15,22 +15,31 @@ jobs:
 
       - name: Install Dependencies
         run: |
-          # 1. 配置镜像源 (启用一个美国镜像)
+          # 1. 配置镜像源并更新包索引
+          echo "--> Configuring mirrors and updating package lists..."
           sed -i 's|# http://mirrors.slackware.com/slackware/slackware64-15.0/|http://mirrors.slackware.com/slackware/slackware64-15.0/|' /etc/slackpkg/mirrors
-          
-          # 2. 更新包索引并安装必要的 GPG Key
           slackpkg update gpg
           slackpkg -batch=on -default_answer=y update
+
+          # 2. 核心步骤：单独安装 Python3 并立即验证
+          echo "--> Installing Python3..."
+          slackpkg -batch=on -default_answer=y install python3
           
-          # 3. 安装开发工具集 (gcc, make, git, cmake 等)
-          # 注意：Slackware 的包管理比较原始，这里安装整个开发组 'd' 和库组 'l' 的一部分
-          slackpkg -batch=on -default_answer=y install git python3 gcc make binutils glibc pkg-config \
-             libdrm libepoxy libva mesa kernel-headers \
-             guile gc
-             
-          # 4. 安装 pip 并通过 pip 安装 meson 和 ninja (Slackware 自带的可能太旧)
-          python3 -m ensurepip
-          pip3 install meson==25.2.3 ninja
+          echo "--> Verifying Python3 installation..."
+          which python3 || (echo "Python3 not found after installation!"; exit 1)
+          python3 --version
+
+          # 3. 安装其余的编译工具和依赖库
+          echo "--> Installing build tools and libraries..."
+          slackpkg -batch=on -default_answer=y install git gcc make binutils pkg-config \
+             libdrm libepoxy libva mesa kernel-headers
+
+          # 4. 使用已验证的 Python3 安装 Meson 和 Ninja
+          echo "--> Installing Meson and Ninja via pip..."
+          python3 -m ensurepip --upgrade
+          pip3 install meson ninja
+
+          echo "--> All dependencies installed successfully."
 
       - name: Clone Virglrenderer
         run: |

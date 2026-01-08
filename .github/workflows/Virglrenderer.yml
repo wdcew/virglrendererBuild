@@ -1,0 +1,71 @@
+name: Build Virglrenderer for Unraid
+
+on:
+  workflow_dispatch: # 允许手动点击按钮触发
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: aclemons/slackware:15.0 # 使用与 Unraid 6.12 相同的底包
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Install Dependencies
+        run: |
+          # 1. 配置镜像源 (启用一个美国镜像)
+          sed -i 's|# http://mirrors.slackware.com/slackware/slackware64-15.0/|http://mirrors.slackware.com/slackware/slackware64-15.0/|' /etc/slackpkg/mirrors
+          
+          # 2. 更新包索引并安装必要的 GPG Key
+          slackpkg update gpg
+          slackpkg -batch=on -default_answer=y update
+          
+          # 3. 安装开发工具集 (gcc, make, git, cmake 等)
+          # 注意：Slackware 的包管理比较原始，这里安装整个开发组 'd' 和库组 'l' 的一部分
+          slackpkg -batch=on -default_answer=y install git python3 gcc make binutils glibc pkg-config \
+             libdrm libepoxy libva mesa kernel-headers \
+             guile gc
+             
+          # 4. 安装 pip 并通过 pip 安装 meson 和 ninja (Slackware 自带的可能太旧)
+          python3 -m ensurepip
+          pip3 install meson ninja
+
+      - name: Clone Virglrenderer
+        run: |
+          git clone https://gitlab.freedesktop.org/virgl/virglrenderer.git
+          cd virglrenderer
+          # 你可以在这里 git checkout 某个特定的 commit，如果 HEAD 编译失败
+
+      - name: Build and Package
+        run: |
+          cd virglrenderer
+          
+          # 配置 Meson，开启视频支持
+          meson setup build \
+            -Dprefix=/usr \
+            -Dlibdir=lib64 \
+            -Dvenus=true \
+            -Dvideo=true \
+            -Dbuildtype=release
+
+          # 编译
+          cd build
+          ninja
+
+          # 伪安装到临时目录
+          mkdir -p pkg
+          DESTDIR=$(pwd)/pkg ninja install
+
+          # 制作 Slackware 安装包
+          cd pkg
+          # 使用 makepkg 制作 txz
+          # 注意：chown 是为了防止 GitHub Action 的权限问题，但在容器内通常是 root
+          makepkg -l y -c n ../../../virglrenderer-video-unraid-x86_64.txz
+
+      - name: Upload Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: virglrenderer-package
+          path: virglrenderer-video-unraid-x86_64.txz

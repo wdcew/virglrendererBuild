@@ -36,7 +36,8 @@ jobs:
           # 3. 安装其余的编译工具和依赖库
           echo "--> Installing build tools and libraries..."
           slackpkg -batch=on -default_answer=y install git gcc make binutils pkg-config \
-             libdrm libepoxy libva mesa kernel-headers expat
+             libdrm libepoxy libva mesa kernel-headers expat \
+             nghttp2 libpsl libssh2 cyrus-sasl ca-certificates
 
           # 4. 使用已验证的 Python3 安装 Meson 和 Ninja
           echo "--> Installing Meson and Ninja via pip..."

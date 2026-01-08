@@ -22,8 +22,10 @@ jobs:
           # 在一次性 CI 环境中，为了避免密钥过期导致构建失败，直接关闭校验
           sed -i 's/CHECKGPG=on/CHECKGPG=off/' /etc/slackpkg/slackpkg.conf
           sed -i 's/POSTINST=on/POSTINST=off/' /etc/slackpkg/slackpkg.conf
+          
           slackpkg -batch=on -default_answer=y update
-
+          # 这一步会更新 expat, glibc, openssl 等所有基础库，解决版本不匹配问题
+          slackpkg -batch=on -default_answer=y upgrade-all
           # 2. 核心步骤：单独安装 Python3 并立即验证
           echo "--> Installing Python3..."
           slackpkg -batch=on -default_answer=y install python3
@@ -35,7 +37,7 @@ jobs:
           # 3. 安装其余的编译工具和依赖库
           echo "--> Installing build tools and libraries..."
           slackpkg -batch=on -default_answer=y install git gcc make binutils pkg-config \
-             libdrm libepoxy libva mesa kernel-headers
+             libdrm libepoxy libva mesa kernel-headers expat
 
           # 4. 使用已验证的 Python3 安装 Meson 和 Ninja
           echo "--> Installing Meson and Ninja via pip..."

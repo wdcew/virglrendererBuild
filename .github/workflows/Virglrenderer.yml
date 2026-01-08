@@ -24,7 +24,8 @@ jobs:
           sed -i 's/POSTINST=on/POSTINST=off/' /etc/slackpkg/slackpkg.conf
           
           slackpkg -batch=on -default_answer=y update
-
+          slackpkg -batch=on -default_answer=y install \
+            libdrm libepoxy libva mesa
 
       - name: Clone Virglrenderer
         run: |

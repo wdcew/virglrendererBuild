@@ -37,7 +37,8 @@ jobs:
           echo "--> Installing build tools and libraries..."
           slackpkg -batch=on -default_answer=y install git gcc make binutils pkg-config \
              libdrm libepoxy libva mesa kernel-headers expat \
-             nghttp2 libpsl libssh2 cyrus-sasl ca-certificates
+             nghttp2 libpsl libssh2 cyrus-sasl ca-certificates \
+             brotli zstd libidn2
 
           # 4. 使用已验证的 Python3 安装 Meson 和 Ninja
           echo "--> Installing Meson and Ninja via pip..."

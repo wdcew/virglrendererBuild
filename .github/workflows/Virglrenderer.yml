@@ -54,7 +54,7 @@ jobs:
 
           # [LLVM 与 Clang]
           # 编译 Mesa 的 AMD (radeonsi) 和 Intel (iris) 驱动必须依赖 LLVM
-          slackpkg -batch=on -default_answer=y install \
+          #slackpkg -batch=on -default_answer=y install \
             #llvm libxml2 zlib \
             
              

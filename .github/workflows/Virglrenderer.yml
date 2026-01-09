@@ -23,9 +23,45 @@ jobs:
           sed -i 's/CHECKGPG=on/CHECKGPG=off/' /etc/slackpkg/slackpkg.conf
           sed -i 's/POSTINST=on/POSTINST=off/' /etc/slackpkg/slackpkg.conf
           
-          slackpkg -batch=on -default_answer=y update
+          # [基础编译工具]
+          # bison/flex: Mesa 编译必须的词法分析工具
+          # expat/pkg-config: 基础库查找工具
+          #slackpkg -batch=on -default_answer=y install \
+            #git python3 gcc make binutils glibc pkg-config \
+            #guile gc kernel-headers expat bison flex
+
+          # [网络与 Git 依赖] 
+          # 修复 git clone 报错 (缺 libbrotli, nghttp2 等)
           slackpkg -batch=on -default_answer=y install \
-            libdrm libepoxy libva mesa
+            #nghttp2 libpsl libssh2 cyrus-sasl ca-certificates \
+            #brotli zstd libidn2
+
+          # [X11 与 OpenGL 基础]
+          # libglvnd: 提供 gl.pc, egl.pc
+          # libX*: 提供 OpenGL 编译所需的窗口系统头文件
+          # libxshmfence: Mesa 必须的共享内存库
+          slackpkg -batch=on -default_answer=y install \
+            libglvnd libX11 libXext libXfixes libxcb \
+            libXau libXdmcp libxshmfence libvdpau
+
+          # [图形核心库与 Wayland]
+          # vulkan-sdk: 编译 Venus (Vulkan) 必须
+          # wayland-protocols: 编译 Mesa Wayland 支持必须
+          # libdrm/libepoxy/libva/mesa: 虽然我们会编译新版，但先装旧版作为构建依赖
+          slackpkg -batch=on -default_answer=y install \
+            libdrm libepoxy libva mesa vulkan-sdk \
+            wayland wayland-protocols
+
+          # [LLVM 与 Clang]
+          # 编译 Mesa 的 AMD (radeonsi) 和 Intel (iris) 驱动必须依赖 LLVM
+          slackpkg -batch=on -default_answer=y install \
+            #llvm libxml2 zlib \
+            clang libelf
+             
+          # 4. 安装 Python 构建工具
+          # Mako 是 Mesa 编译必须的模板引擎
+          python3 -m ensurepip
+          pip3 install meson ninja mako
 
       - name: Clone Virglrenderer
         run: |

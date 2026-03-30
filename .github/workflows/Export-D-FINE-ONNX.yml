@@ -31,7 +31,7 @@ jobs:
           #uv pip install --system onnx onnxruntime onnxsim onnxscript
           #系统自带的 pip 容错率高，能够忽略元数据不匹配的问题正常安装完成。
           既然 uv 提示内部真实版本是 0.4.36，我们可以强制指定安装该版本的 onnxsim，从而绕过校验冲突。
-          python3 -m pip install onnx onnxruntime onnxsim onnxscript
+          uv pip install --system onnx onnxruntime "onnxsim==0.4.36" onnxscript
       - name: Download Checkpoint & Export
         env:
           MODEL_SIZE: ${{ inputs.model_size }}

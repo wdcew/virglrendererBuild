@@ -1,0 +1,46 @@
+name: Export D-FINE ONNX (Native)
+on:
+  workflow_dispatch:
+    inputs:
+      model_size:
+        description: 'Choose Model Size'
+        required: true
+        default: 's'
+        type: choice
+        options: [s, m, l, x]
+jobs:
+  export-onnx:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install System Dependencies
+        run: sudo apt-get update && sudo apt-get install -y libgl1
+        
+      - name: Setup uv
+        uses: astral-sh/setup-uv@v3
+        with:
+          version: "0.8.0"
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - name: Clone Repository
+        run: git clone https://github.com/Peterande/D-FINE.git .
+      - name: Install Python Dependencies
+        run: |
+          uv pip install --system -r requirements.txt
+          uv pip install --system onnx onnxruntime onnxsim onnxscript
+      - name: Download Checkpoint & Export
+        env:
+          MODEL_SIZE: ${{ inputs.model_size }}
+        run: |
+          mkdir -p output
+          wget https://github.com/Peterande/storage/releases/download/dfinev1.0/dfine_${MODEL_SIZE}_obj2coco.pth -O output/dfine_${MODEL_SIZE}_obj2coco.pth
+          sed -i '58s/data = torch.rand(.*)/data = torch.rand(1, 3, 640, 640)/' tools/deployment/export_onnx.py
+          python3 tools/deployment/export_onnx.py -c configs/dfine/objects365/dfine_hgnetv2_${MODEL_SIZE}_obj2coco.yml -r output/dfine_${MODEL_SIZE}_obj2coco.pth
+          # 把生成的模型移到根目录重命名，方便下一步上传
+          mv output/dfine_${MODEL_SIZE}_obj2coco.onnx dfine-${MODEL_SIZE}.onnx
+      - name: Upload ONNX Artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dfine-${{ inputs.model_size }}-onnx
+          path: dfine-${{ inputs.model_size }}.onnx
